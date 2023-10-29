@@ -8,6 +8,7 @@
  */
 package stuff;
 
+import java.io.StringWriter;
 import java.util.Date;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.UriInfo;
@@ -61,62 +62,7 @@ public class restService {
     public restService() {
         
     }
-    
-    // ***********************************************************************
-    
-     // Default GET method, we don't specify a path for it. 
-    /*
-    @GET
-    // The method can produce the 3 types of formats, JSON, XML and plain text.
-    //@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN})
-    // Look for the Accept Header parameter
-    public Response getDefault(@HeaderParam("Accept") String acceptHeader) {
-        
-        // The client specifies the format they desire in their accept header
-        // Consider the case when the Accept header is not provided, so it is null.
-        // Therefore this is the default case
-        if (acceptHeader == null) {
-        return Response
-                    .status(Response.Status.OK)
-                    .entity(stringCollection.toString())
-                    .type(MediaType.TEXT_PLAIN)
-                    .build();
-        
-        // If more than one is specified, we answer following the priority JSON > XML > Plain Text
-        } else if (acceptHeader.contains(MediaType.APPLICATION_JSON)) {
-            // Response.ok(...).build() builds a new instance of ResponseBuilder with a 200 OK status
-            return Response
-                    .status(Response.Status.OK)
-                    .entity(stringCollection)
-                    .type(MediaType.APPLICATION_JSON)
-                    .build();
-            
-        } else if (acceptHeader.contains(MediaType.APPLICATION_XML)) {
-            return Response
-                    .status(Response.Status.OK)
-                    .entity(stringCollection)
-                    .type(MediaType.APPLICATION_XML)
-                    .build();
-            
-        } else if (acceptHeader.contains(MediaType.TEXT_PLAIN)) {
-            return Response
-                    .status(Response.Status.OK)
-                    .entity(stringCollection.toString())
-                    .type(MediaType.TEXT_PLAIN)
-                    .build();
-            //stringCollection.toString()
-            
-        } else {
-            // If no matched format was found,
-            // Response.status(...).build() builds a new instance of ResponseBuilder with a 400 BAD REQUEST status
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity("No matched format was found")
-                    .build();
-        }
-    }
-    */
+
     
     @GET
     @Produces({MediaType.APPLICATION_JSON,MediaType.TEXT_XML,MediaType.TEXT_PLAIN})
@@ -149,7 +95,6 @@ public class restService {
     
     @GET
     @Path("json")
-    //@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
     public Response getJSON() {
           JSONArray jsonArray = new JSONArray();
@@ -172,23 +117,30 @@ public class restService {
     
     @GET
     @Path("xml")
-    //@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_XML)
-    //public ArrayList<String> getXml() {
-    public Response getXML() {   
-        try{
-            return Response
-                    .status(Response.Status.OK)
-                    .entity(personCollection)
-                    .type(MediaType.TEXT_XML)
-                    .build();
-        } catch(Exception e){
-             //ArrayList<String> message = new ArrayList<>();
-            String message = ("<error>" + e.getMessage() + "</error>");
-            return Response
-                    .status(Response.Status.METHOD_NOT_ALLOWED)
-                    .entity(message)
-                    .build();
+    public Response getXML() {
+        
+        //Person test = new Person(1,"bob","ross");
+        StringListWrapper wrapper = new StringListWrapper(stringCollection);
+        
+        try {
+            // Create a JAXBContext for the Message class
+            JAXBContext jaxbContext = JAXBContext.newInstance(StringListWrapper.class);
+
+            // Create a Marshaller
+            Marshaller marshaller = jaxbContext.createMarshaller();
+
+            StringWriter writer = new StringWriter();
+            
+            // Marshal the wrapper object, which includes the string list
+            marshaller.marshal(wrapper, writer);
+            
+            // Return the XML as a Response
+            return Response.ok(writer.toString()).build();
+            
+        } catch (JAXBException e) {
+            // Handle JAXBException if XML serialization fails
+            return Response.serverError().entity(e.getMessage()).build();        
         }
     }
 
