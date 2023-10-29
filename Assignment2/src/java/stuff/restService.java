@@ -20,24 +20,41 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
 import javax.ws.rs.QueryParam;
 import java.util.ArrayList;
+import java.util.List;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.HeaderParam;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 
 
 @Path("rest")
 public class restService {
     
-    // in-memory arrayList that holds all movies;
-    
     private static ArrayList<String> stringCollection = new ArrayList<>();
+    private ArrayList<Person> personCollection = new ArrayList<>();
     
-    // date object used for updating/creating new movies
-    Date lastModified = new Date();
+    // iterate through the array list and find the right ID
+    // make the same method for findFirstName & findLastName..
     
-
+    private Person findPersonById(int ID) {
+    for (Person person : personCollection) {
+        if (person.getID() == ID) {
+            return person;
+        }
+    }
+        return null;
+    }
+    
+    
     @Context
     private UriInfo context;
 
@@ -48,6 +65,7 @@ public class restService {
     // ***********************************************************************
     
      // Default GET method, we don't specify a path for it. 
+    /*
     @GET
     // The method can produce the 3 types of formats, JSON, XML and plain text.
     //@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -98,16 +116,48 @@ public class restService {
                     .build();
         }
     }
+    */
+    
+    @GET
+    @Produces({MediaType.APPLICATION_JSON,MediaType.TEXT_XML,MediaType.TEXT_PLAIN})
+    //@Context to access the request headers
+    public Response getData(@Context HttpHeaders headers) {
+        
+        // Like it says in the assingment.. 
+        List<MediaType> clientMediaTypes = headers.getAcceptableMediaTypes();
+        
+        
+        for (MediaType mediaType : clientMediaTypes) {
+        switch (mediaType.toString()) {
+            
+            case MediaType.APPLICATION_JSON:
+            return getJSON();
+            
+            case MediaType.TEXT_XML:
+                return getXML();
+                
+            case MediaType.TEXT_PLAIN:
+                return getText();
+            
+            default: return getText();
+            }
+        }
+        Response.ResponseBuilder builder = Response.status(Response.Status.BAD_REQUEST);
+        return builder.build();
+    }
+    
     
     @GET
     @Path("json")
     //@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getJson() {
+    public Response getJSON() {
+          JSONArray jsonArray = new JSONArray();
+          jsonArray.put(stringCollection);
          try{
             return Response
                     .status(Response.Status.OK)
-                    .entity(stringCollection)
+                    .entity(jsonArray.toString())
                     .type(MediaType.APPLICATION_JSON)
                     .build();
         } catch(Exception e){
@@ -123,14 +173,14 @@ public class restService {
     @GET
     @Path("xml")
     //@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Produces(MediaType.APPLICATION_XML)
+    @Produces(MediaType.TEXT_XML)
     //public ArrayList<String> getXml() {
-    public Response getXml() {   
+    public Response getXML() {   
         try{
             return Response
                     .status(Response.Status.OK)
-                    .entity(stringCollection)
-                    .type(MediaType.APPLICATION_XML)
+                    .entity(personCollection)
+                    .type(MediaType.TEXT_XML)
                     .build();
         } catch(Exception e){
              //ArrayList<String> message = new ArrayList<>();
